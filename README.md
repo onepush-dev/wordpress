@@ -1,6 +1,6 @@
 # WordPress (high-performance) — WordPress 7.1 on PHP 8.4 with a Valkey object cache, tuned OPcache and MariaDB 12.3. Deploy on Railway with one click.
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/TEMPLATE_CODE)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/TOxdsg)
 
 This template runs the **Docker Official WordPress image** (7.1.3, PHP 8.4, Apache) with a few additions that make it noticeably faster than a stock install, plus MariaDB and Valkey. All three services come pre-wired: every password and salt is generated for you, so you can deploy without filling anything in.
 
