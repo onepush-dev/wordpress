@@ -1,0 +1,55 @@
+name: Build image
+
+# Builds ghcr.io/onepush-dev/wordpress from the Docker Official WordPress image (pinned by digest in the
+# Dockerfile) plus phpredis/igbinary, WP-CLI, Redis Object Cache and the Railway tuning in rootfs/.
+# The Railway template deploys the result by tag + digest.
+on:
+  push:
+    branches: [main]
+    paths: ["Dockerfile", "rootfs/**", ".github/workflows/image.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_VERSION: "7.1.3-php8.4"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Short SHA
+        id: vars
+        run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/wordpress:${{ env.IMAGE_VERSION }}
+            ghcr.io/${{ github.repository_owner }}/wordpress:${{ env.IMAGE_VERSION }}-${{ steps.vars.outputs.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ env.IMAGE_VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.description=WordPress 7.1.3 / PHP 8.4 (official image) tuned for Railway: phpredis object cache, OPcache, WP-CLI
+            org.opencontainers.image.licenses=GPL-2.0-or-later
+      - name: Smoke test
+        run: |
+          set -eux
+          img=ghcr.io/${{ github.repository_owner }}/wordpress:${{ env.IMAGE_VERSION }}-${{ steps.vars.outputs.sha }}
+          docker run --rm --entrypoint php "$img" -m | grep -E '^(redis|igbinary|Zend OPcache|imagick|mysqli)$'
+          docker run --rm --entrypoint php "$img" -r 'echo ini_get("memory_limit"), " ", ini_get("upload_max_filesize"), " ", ini_get("opcache.memory_consumption"), PHP_EOL;'
+          docker run --rm --entrypoint sh "$img" -c 'rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*; apache2ctl -t && apache2ctl -M | grep -E "mpm_prefork|brotli|remoteip|expires|headers"'
+          docker run --rm --entrypoint sh "$img" -c 'php /usr/local/lib/wp-cli.phar --allow-root --version; ls /usr/src/wordpress/wp-content/object-cache.php /usr/src/wordpress/wp-content/plugins/redis-cache/redis-cache.php /usr/src/wordpress/wp-content/mu-plugins/railway-object-cache.php; grep -n railway-config.php /usr/src/wordpress/wp-config-docker.php'

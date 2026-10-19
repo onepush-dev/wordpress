@@ -1,0 +1,8 @@
+#!/bin/sh
+# WP-CLI as the web server user, against the site on the volume. Usage: wp plugin list, wp redis status, ...
+set -e
+if [ "$(id -u)" = 0 ]; then
+	exec runuser -u www-data -- env HOME=/tmp WP_CLI_CACHE_DIR="${WP_CLI_CACHE_DIR:-/tmp/wp-cli-cache}" \
+		php /usr/local/lib/wp-cli.phar --path=/var/www/html "$@"
+fi
+exec php /usr/local/lib/wp-cli.phar --path=/var/www/html "$@"
