@@ -61,6 +61,12 @@ defined( 'WP_REDIS_PREFIX' ) || define( 'WP_REDIS_PREFIX', railway_env( 'WP_REDI
 defined( 'WP_REDIS_TIMEOUT' ) || define( 'WP_REDIS_TIMEOUT', 1 );
 defined( 'WP_REDIS_READ_TIMEOUT' ) || define( 'WP_REDIS_READ_TIMEOUT', 1 );
 defined( 'WP_REDIS_RETRY_INTERVAL' ) || define( 'WP_REDIS_RETRY_INTERVAL', 100 );
+// One long-lived connection per PHP worker instead of a TCP connect on every request.
+defined( 'WP_REDIS_PERSISTENT' ) || define( 'WP_REDIS_PERSISTENT', railway_env_bool( 'WP_REDIS_PERSISTENT', true ) );
+// The plugin's metrics graph writes to Valkey on every request; skip that by default (set
+// WP_REDIS_DISABLE_METRICS=false to get the graph in Settings > Redis). No "optimized by" HTML comment.
+defined( 'WP_REDIS_DISABLE_METRICS' ) || define( 'WP_REDIS_DISABLE_METRICS', railway_env_bool( 'WP_REDIS_DISABLE_METRICS', true ) );
+defined( 'WP_REDIS_DISABLE_COMMENT' ) || define( 'WP_REDIS_DISABLE_COMMENT', true );
 // If Valkey is down, WordPress keeps serving from the database instead of erroring out.
 defined( 'WP_REDIS_GRACEFUL' ) || define( 'WP_REDIS_GRACEFUL', true );
 if ( ! defined( 'WP_REDIS_IGBINARY' ) && extension_loaded( 'igbinary' ) && defined( 'Redis::SERIALIZER_IGBINARY' ) ) {
